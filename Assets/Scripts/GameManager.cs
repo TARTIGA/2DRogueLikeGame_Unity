@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public float turnDelay = .1f;
     public static GameManager instance = null;
     public BoardManager boardScript;
 
@@ -12,6 +13,8 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public bool playersTurn = true;
 
     private int level = 3;
+    private List<Enemy> enemies;
+    private bool enemiesMoving;
 
     /// <summary>
     /// Awake is called when the script instance is being loaded.
@@ -27,10 +30,27 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
         DontDestroyOnLoad(gameObject);
-
-
+        enemies = new List<Enemy>();
         boardScript = GetComponent<BoardManager>();
         InitGame();
+    }
+
+    /// <summary>
+    /// Update is called every frame, if the MonoBehaviour is enabled.
+    /// </summary>
+    void Update()
+    {
+        if (playersTurn || enemiesMoving)
+        {
+            return;
+        }
+
+        StartCoroutine(MoveEnemies());
+    }
+
+    public void AddEnemyTiList(Enemy script)
+    {
+        enemies.Add(script);
     }
 
     public void GameOver()
@@ -40,6 +60,26 @@ public class GameManager : MonoBehaviour
 
     void InitGame()
     {
+        enemies.Clear();
         boardScript.SetupScene(level);
+    }
+
+    IEnumerator MoveEnemies()
+    {
+        enemiesMoving = true;
+        yield return new WaitForSeconds(turnDelay);
+        if (enemies.Count == 0)
+        {
+            yield return new WaitForSeconds(turnDelay);
+        }
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            enemies[i].MoveEnemy();
+            yield return new WaitForSeconds(enemies[i].moveTime);
+        }
+
+        playersTurn = true;
+        enemiesMoving = false;
     }
 }
